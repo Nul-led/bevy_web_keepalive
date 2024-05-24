@@ -11,6 +11,10 @@ keywords = ["bevy", "wasm", "web", "gamedev"]
 categories = ["game-development", "game-engines"]
 license = "MIT OR Apache-2.0"
 
+[package.metadata.docs.rs]
+all-features = true
+default-target = "wasm32-unknown-unknown"
+
 [features]
 default = ["worker"]
 listener = []
