@@ -1,0 +1,30 @@
+[package]
+name = "bevy_web_keepalive"
+version = "0.1.0"
+authors = ["Nulled"]
+edition = "2021"
+rust-version = "1.76"
+description = "Bevy plugins to keep a bevy app running in the browser despite not being visible"
+readme = "README.md"
+repository = ""
+keywords = ["bevy", "wasm", "web", "gamedev", "background", "worker"]
+categories = ["game-development", "game-engines"]
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["worker"]
+listener = []
+worker = []
+timer = []
+
+[dependencies]
+bevy_app = "0.13.2"
+bevy_ecs = "0.13.2"
+bevy_time = "0.13.2"
+wasm-bindgen = "0.2.92"
+web-sys = { version = "0.3.69", features = [
+    "Document", 
+    "Worker",
+    "Blob",
+    "Url"
+] }
