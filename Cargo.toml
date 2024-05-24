@@ -7,7 +7,7 @@ rust-version = "1.76"
 description = "Bevy plugins to keep a bevy app running in the browser despite not being visible"
 readme = "README.md"
 repository = "https://github.com/Nul-led/bevy_web_keepalive"
-keywords = ["bevy", "wasm", "web", "gamedev", "background", "worker"]
+keywords = ["bevy", "wasm", "web", "gamedev"]
 categories = ["game-development", "game-engines"]
 license = "MIT OR Apache-2.0"
 
