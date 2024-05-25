@@ -1,6 +1,6 @@
 [package]
 name = "bevy_web_keepalive"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Nulled"]
 edition = "2021"
 rust-version = "1.76"
@@ -11,14 +11,15 @@ keywords = ["bevy", "wasm", "web", "gamedev"]
 categories = ["game-development", "game-engines"]
 license = "MIT OR Apache-2.0"
 
+
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 default-target = "wasm32-unknown-unknown"
 
 [features]
-default = ["worker"]
+default = ["listener", "timer"]
 listener = []
-worker = []
 timer = []
 
 [dependencies]
@@ -28,8 +29,8 @@ bevy_time = "0.13.2"
 wasm-bindgen = "0.2.92"
 web-sys = { version = "0.3.69", features = [
     "Window",
-    "Document", 
+    "Document",
     "Worker",
     "Blob",
-    "Url"
+    "Url",
 ] }
