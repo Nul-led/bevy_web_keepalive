@@ -5,17 +5,17 @@ use bevy_ecs::{system::Resource, world::World};
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::window;
 
-/// The `VisiblityChangeListenerPlugin` plugin registers a listener that fires when bevy's visibility is changed (eg. the user switches to a different browser tab)
+/// The `VisibilityChangeListenerPlugin` plugin registers a listener that fires when bevy's visibility is changed (eg. the user switches to a different browser tab)
 ///
 /// The user may decide to run the `Main` schedule once after the visibility changes to hidden.
 /// 
 /// PANIC will always occur whenever this is used in a headless environment (aka there is no access to window.document available)
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct VisiblityChangeListenerPlugin {
+pub struct VisibilityChangeListenerPlugin {
     pub run_main_schedule_on_hide: bool,
 }
 
-impl Plugin for VisiblityChangeListenerPlugin {
+impl Plugin for VisibilityChangeListenerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource::<WindowVisibility>(WindowVisibility(true));
 
@@ -26,6 +26,7 @@ impl Plugin for VisiblityChangeListenerPlugin {
                 false => system_init_passive_background_listener,
             },
         );
+
     }
 }
 
