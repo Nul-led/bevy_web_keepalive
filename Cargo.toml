@@ -18,7 +18,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default-target = "wasm32-unknown-unknown"
 
 [features]
-default = ["listener", "timer"]
+default = []
 listener = []
 timer = []
 
