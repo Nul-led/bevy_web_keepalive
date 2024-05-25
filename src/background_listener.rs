@@ -8,6 +8,8 @@ use web_sys::window;
 /// The `VisiblityChangeListenerPlugin` plugin registers a listener that fires when bevy's visibility is changed (eg. the user switches to a different browser tab)
 ///
 /// The user may decide to run the `Main` schedule once after the visibility changes to hidden.
+/// 
+/// PANIC will always occur whenever this is used in a headless environment (aka there is no access to window.document available)
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct VisiblityChangeListenerPlugin {
     pub run_main_schedule_on_hide: bool,

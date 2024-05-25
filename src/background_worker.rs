@@ -93,6 +93,8 @@ fn system_init_timeout_background_worker(world: &mut World) {
             if document.hidden() {
                 world.run_schedule(Main);
             }
+        } else {
+            world.run_schedule(Main);
         }
     });
 
@@ -139,6 +141,8 @@ fn system_init_interval_background_worker(world: &mut World) {
             if document.hidden() {
                 world.run_schedule(Main);
             }
+        } else {
+            world.run_schedule(Main);
         }
     });
 
