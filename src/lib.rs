@@ -7,7 +7,7 @@ mod background_listener;
 pub use background_listener::{VisibilityChangeListenerPlugin, WindowVisibility};
 
 #[cfg(feature = "timer")]
-pub mod background_timer;
+mod background_timer;
 #[cfg(feature = "timer")]
 #[cfg_attr(docsrs, doc(cfg(feature = "timer")))]
 pub use background_timer::{BackgroundTimer, BackgroundTimerPlugin};
