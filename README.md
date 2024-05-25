@@ -5,7 +5,7 @@
 
 Library of bevy plugins to keep a bevy app running in the browser despite despite not being visible
 
-## Background Worker Plugin
+## WebKeepalivePlugin
 
 The `WebKeepalivePlugin` plugin creates a web worker that runs the main schedule to keep bevy running in the background (eg. when the user is on another browser tab).
 
@@ -29,9 +29,7 @@ fn system_a(worker: Res<KeepaliveSettings>) {
 
 Reasoning: `bevy_winit` runs it's event loop via requestAnimationFrame. This works well for apps that don't need to run if they are in the background. However there are situations where this is unwanted such as multiplayer games that require a constant connection and cannot rely on reconnecting.
 
-Feature Requirements: `default-features` | `worker`
-
-## Background Listener Plugin
+## VisibilityChangeListenerPlugin
 
 The `VisibilityChangeListenerPlugin` plugin registers a listener that fires whenever the app's visibility has changed and updates the `WindowVisibility` resource while also allowing the `Main` schedule to run a last time after the app is hidden.
 
@@ -56,7 +54,7 @@ Reasoning: This may be used to notify internal or external services of user inac
 
 Feature Requirements: `listener`
 
-## Background Timer Plugin
+## BackgroundTimerPlugin
 
 The `BackgroundTimerPlugin` plugin adds a utility resource which contains a timer that keeps track of time spent in the background. This plugin needs to be paired with the `WebKeepalivePlugin` to function properly (frame delta time is capped at 250ms in bevy_time by default)
 
@@ -64,7 +62,7 @@ Usage:
 
 ```rust
 
-// To add the listener, use add_plugins, please note that the WebKeepalivePlugin.initial_wake_delay should be < 250.0 so that we can ensure that the frame delta time won't be capped at 250ms 
+// To add the listener, use add_plugins, please note that the WebKeepalivePlugin.initial_wake_delay should be < 250.0 so that we can ensure that the frame delta time won't be capped at 250ms
 app.add_plugins((WebKeepalivePlugin::default(), BackgroundTimerPlugin))
 
 // To use the `BackgroundTimer` resource, access it in a system
