@@ -4,8 +4,8 @@ use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{js_sys::Array, window, Blob, Url, Worker};
 
-/// The `WebKeepalivePlugin` plugin creates a web worker that runs the main schedule every `scheduler_delay`
-/// to keep bevy running in the background (eg. when the user is on another browser tab).
+/// The `WebKeepalivePlugin` plugin creates a web worker that runs the main schedule even when the tab is not visible.
+/// This allows a game  to keep bevy running in the background (eg. when the user is on another browser tab).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WebKeepalivePlugin {
     /// Equivalent of frame delta time (milliseconds), eg. 60Hz = 16.667
