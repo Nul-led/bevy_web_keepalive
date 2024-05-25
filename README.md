@@ -61,7 +61,6 @@ The `BackgroundTimerPlugin` plugin adds a utility resource which contains a time
 Usage:
 
 ```rust
-
 // To add the listener, use add_plugins, please note that the WebKeepalivePlugin.initial_wake_delay should be < 250.0 so that we can ensure that the frame delta time won't be capped at 250ms
 app.add_plugins((WebKeepalivePlugin::default(), BackgroundTimerPlugin))
 
