@@ -18,12 +18,16 @@ app.add_plugins(WebKeepalivePlugin::default())
 // Configure the worker like this:
 app.add_plugins(WebKeepalivePlugin {
     initial_wake_delay: 1000.0, // 1 sec delay
-    use_set_timeout: false, // use setInterval internally instead of setTimeout
 })
 
 // To change the wake_delay at run-time, access the `KeepaliveSettings` resource in a system
-fn system_a(worker: Res<KeepaliveSettings>) {
-    worker.wake_delay = 16.667; // 60Hz updates
+fn system_a(settings: Res<KeepaliveSettings>) {
+    settings.wake_delay = 16.667; // 60Hz updates
+}
+
+// To terminate the web worker remove the `KeepaliveSettings` resource
+fn system_b(world: &mut World) {
+    world.remove_resource::<KeepaliveSettings>();
 }
 ```
 
