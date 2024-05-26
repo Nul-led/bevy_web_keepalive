@@ -14,15 +14,12 @@ pub struct WebKeepalivePlugin {
     ///
     /// The default is 16.667, or 60 updates per seconds.
     pub initial_wake_delay: f64,
-    /// Use setTimeout instead of setInterval to enable changing the scheduler delay mid-run without clearing the interval
-    pub use_set_timeout: bool,
 }
 
 impl Default for WebKeepalivePlugin {
     fn default() -> Self {
         Self {
             initial_wake_delay: 16.667,
-            use_set_timeout: true,
         }
     }
 }
@@ -31,14 +28,12 @@ impl Plugin for WebKeepalivePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(KeepaliveSettings {
             wake_delay: self.initial_wake_delay,
+            worker: None,
         });
 
         app.add_systems(
             Startup,
-            match self.use_set_timeout {
-                true => system_init_timeout_background_worker,
-                false => system_init_interval_background_worker,
-            },
+            system_init_background_worker
         );
     }
 }
@@ -46,62 +41,30 @@ impl Plugin for WebKeepalivePlugin {
 /// The `KeepaliveSettings` resource can be used to control at runtime how the background worker operates.
 ///
 /// Please note that it currently isn't possible to change from `setTimeout` to `setInterval`.
-#[derive(Clone, Copy, Debug, PartialEq, Default, Resource)]
+#[derive(Clone, Debug, PartialEq, Default, Resource)]
 pub struct KeepaliveSettings {
     /// The interval of time, in milliseconds, to run the `Main` schedule when a tab is hidden.
     ///
     /// The default is 16.667, or 60 updates per seconds.
     pub wake_delay: f64,
+    
+    worker: Option<Worker>,
 }
 
-/// The `system_init_timeout_background_worker` system runs at `Startup` and launches the web worker with a tick loop based on `setTimeout`
-fn system_init_timeout_background_worker(world: &mut World) {
-    let setings = world.resource::<KeepaliveSettings>();
-    let script = Blob::new_with_str_sequence(
-        &Array::of1(&JsValue::from_str(&format!(
-            "
-            let delay = {};
-            self.onmessage = v => {{
-                const _delay = parseInt(v);
-                if (!isNaN(_delay)) delay = _delay;
-            }};
-            const update = () => setTimeout(update, delay) && self.postMessage(null);
-            setTimeout(update, delay);
-            ",
-            setings.wake_delay
-        )))
-        .unchecked_into(),
-    )
-    .unwrap();
-    let worker = Worker::new(&Url::create_object_url_with_blob(&script).unwrap()).unwrap();
+unsafe impl Send for KeepaliveSettings {}
+unsafe impl Sync for KeepaliveSettings {}
 
-    let world_ptr = Rc::new(world as *mut World);
-    let closure = Closure::<dyn FnMut()>::new({
-        let world = world_ptr.clone();
-        move || {
-            if window()
-                .and_then(|w| w.document())
-                .is_some_and(|d| !d.hidden())
-            {
-                return;
-            }
-            unsafe {
-                let Some(world) = world.as_mut() else {
-                    return;
-                };
-                world.run_schedule(Main);
-            }
+impl Drop for KeepaliveSettings {
+    fn drop(&mut self) {
+        if let Some(worker) = &self.worker {
+            worker.terminate();
         }
-    });
-
-    worker.set_onmessage(Some(closure.as_ref().unchecked_ref()));
-
-    closure.forget();
+    }
 }
 
 /// The `system_init_timeout_background_worker` system runs at `Startup` and launches the web worker with a tick loop based on `setInterval`
-fn system_init_interval_background_worker(world: &mut World) {
-    let setings = world.resource::<KeepaliveSettings>();
+fn system_init_background_worker(world: &mut World) {
+    let mut settings = world.resource_mut::<KeepaliveSettings>();
     let script = Blob::new_with_str_sequence(
         &Array::of1(&JsValue::from_str(&format!(
             "
@@ -113,13 +76,15 @@ fn system_init_interval_background_worker(world: &mut World) {
                 interval = setInterval(self.postMessage(null), delay);
             }};
             ",
-            setings.wake_delay
+            settings.wake_delay
         )))
         .unchecked_into(),
     )
     .unwrap();
 
     let worker = Worker::new(&Url::create_object_url_with_blob(&script).unwrap()).unwrap();
+    
+    settings.worker = Some(worker.clone()); // only clones the js heap ref
 
     let world_ptr = Rc::new(world as *mut World);
     let closure = Closure::<dyn FnMut()>::new({
