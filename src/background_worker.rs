@@ -68,12 +68,12 @@ fn system_init_background_worker(world: &mut World) {
     let script = Blob::new_with_str_sequence(
         &Array::of1(&JsValue::from_str(&format!(
             "
-            let interval = setInterval(self.postMessage(null), {});
+            let interval = setInterval(() => self.postMessage(null), {});
             self.onmessage = v => {{
                 const delay = parseInt(v);
                 if (isNaN(delay)) return;
                 clearInterval(interval);
-                interval = setInterval(self.postMessage(null), delay);
+                interval = setInterval(() => self.postMessage(null), delay);
             }};
             ",
             settings.wake_delay
