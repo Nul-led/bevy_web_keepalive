@@ -21,7 +21,7 @@ app.add_plugins(WebKeepalivePlugin {
 })
 
 // To change the wake_delay at run-time, access the `KeepaliveSettings` resource in a system
-fn system_a(settings: Res<KeepaliveSettings>) {
+fn system_a(mut settings: ResMut<KeepaliveSettings>) {
     settings.wake_delay = 16.667; // 60Hz updates
 }
 
