@@ -1,5 +1,5 @@
 use bevy_app::{App, Main, Plugin, Startup};
-use bevy_ecs::{system::Resource, world::World};
+use bevy_ecs::{event::Event, system::Resource, world::World};
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::window;
@@ -30,7 +30,7 @@ impl Plugin for VisibilityChangeListenerPlugin {
 }
 
 /// The `WindowVisibility` resource keeps track of the app's visibility
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Resource)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Resource, Event)]
 pub struct WindowVisibility(bool);
 
 /// The `system_init_active_background_listener` system initializes the visibilitychange listener which runs the `Main` schedule once when hidden
@@ -49,7 +49,11 @@ fn system_init_active_background_listener(world: &mut World) {
                 let Some(world) = world.as_mut() else {
                     return;
                 };
+
                 world.resource_mut::<WindowVisibility>().0 = !is_hidden;
+
+                world.trigger(*world.resource::<WindowVisibility>());
+                
                 if is_hidden {
                     world.run_schedule(Main);
                 }
@@ -84,7 +88,10 @@ fn system_init_passive_background_listener(world: &mut World) {
                 let Some(world) = world.as_mut() else {
                     return;
                 };
+
                 world.resource_mut::<WindowVisibility>().0 = !document.hidden();
+
+                world.trigger(*world.resource::<WindowVisibility>());
             }
         }
     });
