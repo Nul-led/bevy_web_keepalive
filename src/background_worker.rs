@@ -13,13 +13,13 @@ pub struct WebKeepalivePlugin {
     /// This interval timer can be changed after the initial value is set through the [`KeepaliveSettings`] resource.
     ///
     /// The default is 16.667, or 60 updates per seconds.
-    pub initial_wake_delay: f64,
+    pub wake_delay: f64,
 }
 
 impl Default for WebKeepalivePlugin {
     fn default() -> Self {
         Self {
-            initial_wake_delay: 16.667,
+            wake_delay: 1000.0 / 60.0,
         }
     }
 }
@@ -27,7 +27,7 @@ impl Default for WebKeepalivePlugin {
 impl Plugin for WebKeepalivePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(KeepaliveSettings {
-            wake_delay: self.initial_wake_delay,
+            wake_delay: self.wake_delay,
             worker: None,
         });
 
@@ -51,6 +51,7 @@ pub struct KeepaliveSettings {
     worker: Option<Worker>,
 }
 
+// These are safe to implement as we are in a single threaded environment, they are only needed to satisfy bevy's trait requirements for resources
 unsafe impl Send for KeepaliveSettings {}
 unsafe impl Sync for KeepaliveSettings {}
 
