@@ -1,5 +1,8 @@
 use bevy_app::{App, Plugin, Update};
-use bevy_ecs::system::{Res, ResMut, Resource};
+use bevy_ecs::{
+    resource::Resource,
+    system::{Res, ResMut},
+};
 use bevy_time::{Stopwatch, Time};
 use web_sys::window;
 
