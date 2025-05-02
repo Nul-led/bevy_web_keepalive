@@ -1,5 +1,5 @@
 use bevy_app::{App, Main, Plugin, Startup};
-use bevy_ecs::{system::Resource, world::World};
+use bevy_ecs::{resource::Resource, world::World};
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{js_sys::Array, window, Blob, Url, Worker};
@@ -31,10 +31,7 @@ impl Plugin for WebKeepalivePlugin {
             worker: None,
         });
 
-        app.add_systems(
-            Startup,
-            system_init_background_worker
-        );
+        app.add_systems(Startup, system_init_background_worker);
     }
 }
 
@@ -47,7 +44,7 @@ pub struct KeepaliveSettings {
     ///
     /// The default is 16.667, or 60 updates per seconds.
     pub wake_delay: f64,
-    
+
     worker: Option<Worker>,
 }
 
@@ -84,7 +81,7 @@ fn system_init_background_worker(world: &mut World) {
     .unwrap();
 
     let worker = Worker::new(&Url::create_object_url_with_blob(&script).unwrap()).unwrap();
-    
+
     settings.worker = Some(worker.clone()); // only clones the js heap ref
 
     let world_ptr = Rc::new(world as *mut World);
@@ -110,3 +107,4 @@ fn system_init_background_worker(world: &mut World) {
 
     closure.forget();
 }
+

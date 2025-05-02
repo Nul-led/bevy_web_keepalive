@@ -1,5 +1,5 @@
 use bevy_app::{App, Main, Plugin, Startup};
-use bevy_ecs::{event::Event, system::Resource, world::World};
+use bevy_ecs::{event::Event, resource::Resource, world::World};
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::window;
@@ -53,7 +53,7 @@ fn system_init_active_background_listener(world: &mut World) {
                 world.resource_mut::<WindowVisibility>().0 = !is_hidden;
 
                 world.trigger(*world.resource::<WindowVisibility>());
-                
+
                 if is_hidden {
                     world.run_schedule(Main);
                 }
