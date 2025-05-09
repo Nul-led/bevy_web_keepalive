@@ -24,8 +24,8 @@ timer = []
 bevy_app = "0.16.0"
 bevy_ecs = "0.16.0"
 bevy_time = "0.16.0"
-wasm-bindgen = "0.2.92"
-web-sys = { version = "0.3.69", features = [
+wasm-bindgen = "0.2.100"
+web-sys = { version = "0.3.77", features = [
   "Window",
   "Document",
   "Worker",
