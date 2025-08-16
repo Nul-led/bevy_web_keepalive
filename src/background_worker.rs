@@ -1,5 +1,6 @@
-use bevy_app::{App, Main, Plugin, Startup};
+use bevy_app::{App, Plugin, Startup};
 use bevy_ecs::{resource::Resource, world::World};
+use bevy_winit::{EventLoopProxyWrapper, WakeUp};
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{js_sys::Array, window, Blob, Url, Worker};
@@ -98,7 +99,10 @@ fn system_init_background_worker(world: &mut World) {
                 let Some(world) = world.as_mut() else {
                     return;
                 };
-                world.run_schedule(Main);
+
+                if let Some(proxy) = world.get_resource::<EventLoopProxyWrapper<WakeUp>>() {
+                    let _ = proxy.send_event(WakeUp);
+                }
             }
         }
     });
@@ -107,4 +111,3 @@ fn system_init_background_worker(world: &mut World) {
 
     closure.forget();
 }
-
