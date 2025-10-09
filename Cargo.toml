@@ -1,6 +1,6 @@
 [package]
 name = "bevy_web_keepalive"
-version = "0.3.5"
+version = "0.4.0"
 authors = ["Nulled"]
 edition = "2021"
 rust-version = "1.76"
@@ -21,12 +21,12 @@ listener = []
 timer = []
 
 [dependencies]
-bevy_winit = "0.16.0"
-bevy_app = "0.16.0"
-bevy_ecs = "0.16.0"
-bevy_time = "0.16.0"
-wasm-bindgen = "0.2.100"
-web-sys = { version = "0.3.77", features = [
+bevy_winit = "0.17"
+bevy_app = "0.17"
+bevy_ecs = "0.17"
+bevy_time = "0.17"
+wasm-bindgen = "0.2.104"
+web-sys = { version = "0.3.81", features = [
   "Window",
   "Document",
   "Worker",
