@@ -5,6 +5,21 @@
 
 Library of bevy plugins to keep a bevy app running in the browser despite despite not being visible
 
+## Installation
+
+```toml
+[dependencies]
+bevy = "0.19"
+bevy_web_keepalive = "0.6"
+```
+
+## Bevy Compatibility
+
+| Bevy | bevy_web_keepalive |
+|------|--------------------|
+| 0.19 | 0.6                |
+| 0.18 | 0.5                |
+
 ## WebKeepalivePlugin
 
 The `WebKeepalivePlugin` plugin creates a web worker that runs the main schedule to keep bevy running in the background (eg. when the user is on another browser tab).
