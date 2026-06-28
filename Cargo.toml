@@ -1,9 +1,9 @@
 [package]
 name = "bevy_web_keepalive"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Nulled"]
 edition = "2021"
-rust-version = "1.89.0"
+rust-version = "1.95.0"
 description = "Bevy plugins to keep a bevy app running in the browser despite not being visible"
 readme = "README.md"
 repository = "https://github.com/Nul-led/bevy_web_keepalive"
@@ -21,10 +21,10 @@ listener = []
 timer = []
 
 [dependencies]
-bevy_winit = "0.18"
-bevy_app = "0.18"
-bevy_ecs = "0.18"
-bevy_time = "0.18"
+bevy_winit = "0.19.0"
+bevy_app = "0.19.0"
+bevy_ecs = "0.19.0"
+bevy_time = "0.19.0"
 wasm-bindgen = "0.2.104"
 web-sys = { version = "0.3.81", features = [
   "Window",
