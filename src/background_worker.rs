@@ -8,15 +8,15 @@ use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{js_sys::Array, window, Blob, Url, Worker};
 
-/// The `WebKeepalivePlugin` plugin creates a web worker that runs the main schedule even when the tab is not visible.
-/// This allows a game  to keep bevy running in the background (eg. when the user is on another browser tab).
+/// The `WebKeepalivePlugin` plugin creates a web worker that keeps Bevy updating even when the tab is not visible.
+/// This allows a game to keep Bevy running in the background (eg. when the user is on another browser tab).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WebKeepalivePlugin {
-    /// The interval of time, in milliseconds, to run the `Main` schedule when a tab is hidden.
+    /// The interval of time, in milliseconds, to wake Bevy when a tab is hidden.
     ///
     /// This interval timer can be changed after the initial value is set through the [`KeepaliveSettings`] resource.
     ///
-    /// The default is 16.667, or 60 updates per seconds.
+    /// The default is 16.667, or 60 updates per second.
     pub wake_delay: f64,
 }
 
@@ -46,13 +46,13 @@ impl Plugin for WebKeepalivePlugin {
 /// Please note that it currently isn't possible to change from `setTimeout` to `setInterval`.
 #[derive(Clone, Debug, PartialEq, Default, Resource)]
 pub struct KeepaliveSettings {
-    /// The interval of time, in milliseconds, to run the `Main` schedule when a tab is hidden.
+    /// The interval of time, in milliseconds, to wake Bevy when a tab is hidden.
     ///
-    /// The default is 16.667, or 60 updates per seconds.
+    /// The default is 16.667, or 60 updates per second.
     pub wake_delay: f64,
 
     worker: Option<Worker>,
-    hidden_windows: Vec<(Entity, bool)>,
+    hidden_windows: Vec<Entity>,
 }
 
 // These are safe to implement as we are in a single threaded environment, they are only needed to satisfy bevy's trait requirements for resources
@@ -67,7 +67,7 @@ impl Drop for KeepaliveSettings {
     }
 }
 
-/// The `system_init_timeout_background_worker` system runs at `Startup` and launches the web worker with a tick loop based on `setInterval`
+/// The `system_init_background_worker` system runs at `Startup` and launches the web worker with a tick loop based on `setInterval`.
 fn system_init_background_worker(world: &mut World) {
     let mut settings = world.resource_mut::<KeepaliveSettings>();
     let script = Blob::new_with_str_sequence(
@@ -113,8 +113,12 @@ fn system_init_background_worker(world: &mut World) {
                     return;
                 }
 
-                if let Some(proxy) = world.get_resource::<EventLoopProxyWrapper>() {
-                    let _ = proxy.send_event(WinitUserEvent::WakeUp);
+                let sent = world
+                    .get_resource::<EventLoopProxyWrapper>()
+                    .is_some_and(|proxy| proxy.send_event(WinitUserEvent::WakeUp).is_ok());
+
+                if !sent {
+                    restore_windows_after_keepalive(world);
                 }
             }
         }
@@ -133,21 +137,16 @@ fn hide_windows_for_keepalive(world: &mut World) -> bool {
 
     let mut query = world.query::<(Entity, &mut Window)>();
     for (entity, mut window) in query.iter_mut(world) {
-        if !hidden_windows
-            .iter()
-            .any(|(hidden_entity, _)| *hidden_entity == entity)
-        {
-            hidden_windows.push((entity, window.visible));
+        if window.visible {
+            hidden_windows.push(entity);
+
+            // Bevy's winit runner performs a full App::update when all windows are invisible.
+            // Bypass change detection so this runner hint is not synced to the backend window.
+            window.bypass_change_detection().visible = false;
         }
-
-        // Bevy's winit runner performs a full App::update when all windows are invisible.
-        // Bypass change detection so this runner hint is not synced to the backend window.
-        window.bypass_change_detection().visible = false;
     }
 
-    if let Some(mut settings) = world.get_resource_mut::<KeepaliveSettings>() {
-        settings.hidden_windows = hidden_windows;
-    }
+    world.resource_mut::<KeepaliveSettings>().hidden_windows = hidden_windows;
 
     true
 }
@@ -163,9 +162,9 @@ fn restore_windows_after_keepalive(world: &mut World) {
     }
 
     let mut query = world.query::<&mut Window>();
-    for (entity, visible) in hidden_windows {
+    for entity in hidden_windows {
         if let Ok(mut window) = query.get_mut(world, entity) {
-            window.bypass_change_detection().visible = visible;
+            window.bypass_change_detection().visible = true;
         }
     }
 }
