@@ -21,9 +21,11 @@ listener = []
 timer = []
 
 [dependencies]
+bevy_winit = "0.19.0"
 bevy_app = "0.19.0"
 bevy_ecs = "0.19.0"
 bevy_time = "0.19.0"
+bevy_window = "0.19.0"
 wasm-bindgen = "0.2.104"
 web-sys = { version = "0.3.81", features = [
   "Window",
