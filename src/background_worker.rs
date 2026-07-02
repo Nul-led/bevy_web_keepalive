@@ -4,9 +4,9 @@ use bevy_ecs::{
 };
 use bevy_window::Window;
 use bevy_winit::{EventLoopProxyWrapper, WinitUserEvent};
-use std::rc::Rc;
+use std::panic;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{js_sys::Array, window, Blob, Url, Worker};
+use web_sys::{console, js_sys::Array, window, Blob, PageTransitionEvent, Url, Worker};
 
 /// The `WebKeepalivePlugin` plugin creates a web worker that keeps Bevy updating even when the tab is not visible.
 /// This allows a game to keep Bevy running in the background (eg. when the user is on another browser tab).
@@ -44,7 +44,7 @@ impl Plugin for WebKeepalivePlugin {
 /// The `KeepaliveSettings` resource can be used to control at runtime how the background worker operates.
 ///
 /// Please note that it currently isn't possible to change from `setTimeout` to `setInterval`.
-#[derive(Clone, Debug, PartialEq, Default, Resource)]
+#[derive(Debug, Default, Resource)]
 pub struct KeepaliveSettings {
     /// The interval of time, in milliseconds, to wake Bevy when a tab is hidden.
     ///
@@ -69,7 +69,7 @@ impl Drop for KeepaliveSettings {
 
 /// The `system_init_background_worker` system runs at `Startup` and launches the web worker with a tick loop based on `setInterval`.
 fn system_init_background_worker(world: &mut World) {
-    let mut settings = world.resource_mut::<KeepaliveSettings>();
+    let wake_delay = world.resource::<KeepaliveSettings>().wake_delay;
     let script = Blob::new_with_str_sequence(
         &Array::of1(&JsValue::from_str(&format!(
             "
@@ -81,45 +81,43 @@ fn system_init_background_worker(world: &mut World) {
                 interval = setInterval(() => self.postMessage(null), delay);
             }};
             ",
-            settings.wake_delay
+            wake_delay
         )))
         .unchecked_into(),
     )
     .unwrap();
 
     let worker = Worker::new(&Url::create_object_url_with_blob(&script).unwrap()).unwrap();
+    install_worker_cleanup(worker.clone());
 
-    settings.worker = Some(worker.clone()); // only clones the js heap ref
+    world.resource_mut::<KeepaliveSettings>().worker = Some(worker.clone());
 
-    let world_ptr = Rc::new(world as *mut World);
-    let closure = Closure::<dyn FnMut()>::new({
-        let world = world_ptr.clone();
-        move || {
-            let is_visible = window()
-                .and_then(|w| w.document())
-                .is_some_and(|d| !d.hidden());
+    let world = world as *mut World;
+    let closure = Closure::<dyn FnMut()>::new(move || {
+        let is_visible = window()
+            .and_then(|w| w.document())
+            .is_some_and(|d| !d.hidden());
 
-            unsafe {
-                let Some(world) = world.as_mut() else {
-                    return;
-                };
+        unsafe {
+            let Some(world) = world.as_mut() else {
+                return;
+            };
 
-                if is_visible {
-                    restore_windows_after_keepalive(world);
-                    return;
-                }
+            if is_visible {
+                restore_windows_after_keepalive(world);
+                return;
+            }
 
-                if !hide_windows_for_keepalive(world) {
-                    return;
-                }
+            if !hide_windows_for_keepalive(world) {
+                return;
+            }
 
-                let sent = world
-                    .get_resource::<EventLoopProxyWrapper>()
-                    .is_some_and(|proxy| proxy.send_event(WinitUserEvent::WakeUp).is_ok());
+            let sent = world
+                .get_resource::<EventLoopProxyWrapper>()
+                .is_some_and(|proxy| proxy.send_event(WinitUserEvent::WakeUp).is_ok());
 
-                if !sent {
-                    restore_windows_after_keepalive(world);
-                }
+            if !sent {
+                restore_windows_after_keepalive(world);
             }
         }
     });
@@ -127,6 +125,37 @@ fn system_init_background_worker(world: &mut World) {
     worker.set_onmessage(Some(closure.as_ref().unchecked_ref()));
 
     closure.forget();
+}
+
+fn install_worker_cleanup(worker: Worker) {
+    let worker_on_panic = worker.clone();
+    let previous_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        worker_on_panic.terminate();
+        previous_hook(info);
+    }));
+
+    let Some(window) = window() else {
+        console::warn_1(
+            &"bevy_web_keepalive: failed to install worker cleanup without a window".into(),
+        );
+        return;
+    };
+
+    let closure =
+        Closure::<dyn FnMut(PageTransitionEvent)>::new(move |event: PageTransitionEvent| {
+            if !event.persisted() {
+                worker.terminate();
+            }
+        });
+
+    match window.add_event_listener_with_callback("pagehide", closure.as_ref().unchecked_ref()) {
+        Ok(()) => closure.forget(),
+        Err(error) => console::warn_1(
+            &format!("bevy_web_keepalive: failed to install pagehide worker cleanup: {error:?}")
+                .into(),
+        ),
+    }
 }
 
 fn hide_windows_for_keepalive(world: &mut World) -> bool {
