@@ -33,6 +33,16 @@ impl Plugin for VisibilityChangeListenerPlugin {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Resource, Event)]
 pub struct WindowVisibility(bool);
 
+impl WindowVisibility {
+    pub fn is_visible(&self) -> bool {
+        self.0
+    }
+
+    pub fn is_hidden(&self) -> bool {
+        !self.0
+    }
+}
+
 /// The `system_init_active_background_listener` system initializes the visibilitychange listener which runs the `Main` schedule once when hidden
 fn system_init_active_background_listener(world: &mut World) {
     let world_ptr = Rc::new(world as *mut World);
