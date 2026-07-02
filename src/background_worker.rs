@@ -4,12 +4,9 @@ use bevy_ecs::{
 };
 use bevy_window::Window;
 use bevy_winit::{EventLoopProxyWrapper, WinitUserEvent};
+use std::panic;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{
-    console,
-    js_sys::{Array, Error},
-    window, Blob, ErrorEvent, Event, PromiseRejectionEvent, Url, Worker,
-};
+use web_sys::{console, js_sys::Array, window, Blob, Event, PageTransitionEvent, Url, Worker};
 
 /// The `WebKeepalivePlugin` plugin creates a web worker that keeps Bevy updating even when the tab is not visible.
 /// This allows a game to keep Bevy running in the background (eg. when the user is on another browser tab).
@@ -131,6 +128,13 @@ fn system_init_background_worker(world: &mut World) {
 }
 
 fn install_worker_cleanup(worker: Worker) {
+    let worker_on_panic = worker.clone();
+    let previous_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        worker_on_panic.terminate();
+        previous_hook(info);
+    }));
+
     let Some(window) = window() else {
         console::warn_1(
             &"bevy_web_keepalive: failed to install worker cleanup without a window".into(),
@@ -139,29 +143,15 @@ fn install_worker_cleanup(worker: Worker) {
     };
 
     let closure = Closure::<dyn FnMut(Event)>::new(move |event: Event| {
-        let should_terminate = match event.type_().as_str() {
-            "pagehide" | "beforeunload" | "unload" => true,
-            "error" => event.dyn_ref::<ErrorEvent>().is_some_and(|event| {
-                text_is_wasm_panic(&event.message()) || value_is_wasm_panic(&event.error())
-            }),
-            "unhandledrejection" => event
-                .dyn_ref::<PromiseRejectionEvent>()
-                .is_some_and(|event| value_is_wasm_panic(&event.reason())),
-            _ => false,
-        };
-
-        if should_terminate {
+        let bfcache_pagehide = event
+            .dyn_ref::<PageTransitionEvent>()
+            .is_some_and(PageTransitionEvent::persisted);
+        if !bfcache_pagehide {
             worker.terminate();
         }
     });
 
-    for event in [
-        "pagehide",
-        "beforeunload",
-        "unload",
-        "error",
-        "unhandledrejection",
-    ] {
+    for event in ["pagehide", "unload"] {
         if let Err(error) =
             window.add_event_listener_with_callback(event, closure.as_ref().unchecked_ref())
         {
@@ -173,19 +163,6 @@ fn install_worker_cleanup(worker: Worker) {
     }
 
     closure.forget();
-}
-
-fn value_is_wasm_panic(value: &JsValue) -> bool {
-    value
-        .as_string()
-        .is_some_and(|text| text_is_wasm_panic(&text))
-        || value
-            .dyn_ref::<Error>()
-            .is_some_and(|error| text_is_wasm_panic(&String::from(error.message())))
-}
-
-fn text_is_wasm_panic(text: &str) -> bool {
-    text.contains("unreachable") || text.contains("panicked at")
 }
 
 fn hide_windows_for_keepalive(world: &mut World) -> bool {
