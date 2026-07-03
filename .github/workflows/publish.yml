@@ -1,6 +1,7 @@
 name: Publish crate
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -29,15 +30,15 @@ jobs:
         run: cargo fmt --check
 
       - name: Check default target
-        run: cargo check --all-features --locked
+        run: cargo check --all-features
 
       - name: Check WebAssembly target
-        run: cargo check --all-features --locked --target wasm32-unknown-unknown
+        run: cargo check --all-features --target wasm32-unknown-unknown
 
       - name: Run Clippy
-        run: cargo clippy --all-features --locked -- -D warnings
+        run: cargo clippy --all-features -- -D warnings
 
       - name: Publish crate
-        run: cargo publish --locked
+        run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
