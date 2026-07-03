@@ -1,0 +1,46 @@
+name: Publish crate
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add wasm32-unknown-unknown
+
+      - name: Verify formatting
+        run: cargo fmt --check
+
+      - name: Check default target
+        run: cargo check --all-features --locked
+
+      - name: Check WebAssembly target
+        run: cargo check --all-features --locked --target wasm32-unknown-unknown
+
+      - name: Run Clippy
+        run: cargo clippy --all-features --locked -- -D warnings
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish crate
+        run: cargo publish --locked --token "${{ steps.auth.outputs.token }}"
