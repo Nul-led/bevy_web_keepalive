@@ -9,14 +9,15 @@ Library of Bevy plugins to keep a Bevy app running in the browser while the tab 
 
 ```toml
 [dependencies]
-bevy = "0.19"
-bevy_web_keepalive = "0.6"
+bevy = "0.20"
+bevy_web_keepalive = "0.7"
 ```
 
 ## Bevy Compatibility
 
 | Bevy | bevy_web_keepalive |
 |------|--------------------|
+| 0.20 | 0.7                |
 | 0.19 | 0.6                |
 | 0.18 | 0.5                |
 
